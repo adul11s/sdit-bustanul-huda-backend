@@ -1,0 +1,883 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// BASE ENTITY PATTERN
+// ============================================================
+// All models with audit fields extend this pattern:
+//   createdAt  : when the record was created
+//   createdBy  : userId of the creator
+//   updatedAt  : when the record was last modified
+//   updatedBy  : userId of the last modifier
+//   isDeleted  : soft delete flag (default false)
+//   deletedAt  : when the record was soft-deleted
+//   deletedBy  : userId of the soft-deleter
+//
+// SOFT DELETE RULE: Never hard-delete records. Set isDeleted=true.
+// QUERY RULE: Always filter WHERE isDeleted = false
+// ============================================================
+
+enum Role {
+  ADMIN
+  TEACHER
+  HOMEROOM_TEACHER
+  STUDENT
+  FINANCE
+}
+
+enum Gender {
+  MALE
+  FEMALE
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  SICK
+  PERMISSION
+}
+
+enum PaymentStatus {
+  UNPAID
+  PARTIAL
+  PAID
+}
+
+enum PaymentType {
+  TUITION
+  ACTIVITIES
+  BOOKS
+  OTHER
+}
+
+enum ExamType {
+  MCQ
+  ESSAY
+  MIXED
+}
+
+enum QuestionType {
+  MCQ
+  ESSAY
+}
+
+enum TargetType {
+  CLASS
+  STUDENT
+}
+
+enum GradeCategory {
+  ASSIGNMENT
+  WEEKLY_EXAM
+  MIDTERM
+  FINAL
+}
+
+enum SubmissionStatus {
+  DRAFT
+  IN_PROGRESS
+  SUBMITTED
+  GRADED
+}
+
+enum AssignmentSubmissionStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  SUBMITTED
+  GRADED
+}
+
+enum GradingStatus {
+  PENDING
+  AUTO_GRADED
+  MANUALLY_GRADED
+  FINAL
+}
+
+enum BulletinStatus {
+  UPCOMING
+  ONGOING
+  PAST
+}
+
+enum BulletinCategory {
+  EVENT
+  ACHIEVEMENT
+  ANNOUNCEMENT
+}
+
+enum CalendarEventType {
+  HOLIDAY
+  STUDY_TOUR
+  CLASS_MEETING
+  COMPETITION
+  SCIENCE_OLYMPIAD
+  EXAM_PERIOD
+  CUSTOM
+}
+
+enum NotificationType {
+  ASSIGNMENT
+  EXAM
+  PAYMENT
+  BULLETIN
+  PROMOTION
+  GENERAL
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  SOFT_DELETE
+  RESTORE
+  LOGIN
+  LOGOUT
+  PASSWORD_CHANGE
+  STATUS_CHANGE
+}
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  password     String
+  name         String
+  role         Role      @default(STUDENT)
+  phone        String?
+  address      String?
+  gender       Gender?
+  birthDate    DateTime?
+  birthPlace   String?
+  avatar       String?   @db.Text
+  title        String?
+  teachingStyle String?  @db.Text
+  hobby        String?
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  createdBy    String?   @db.Uuid
+  updatedAt    DateTime  @updatedAt
+  updatedBy    String?   @db.Uuid
+  isDeleted    Boolean   @default(false)
+  deletedAt    DateTime?
+  deletedBy    String?   @db.Uuid
+
+  student          Student?
+  teacher         Teacher?
+  createdBulletins Bulletin[]     @relation("BulletinAuthor")
+  notifications   Notification[]
+  auditLogs       AuditLog[]
+
+  @@index([email])
+  @@index([role])
+  @@index([isDeleted])
+}
+
+model AcademicYear {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  isCurrent Boolean  @default(false)
+  startDate DateTime
+  endDate   DateTime
+  createdAt DateTime @default(now())
+  createdBy String?  @db.Uuid
+  updatedAt DateTime @updatedAt
+  updatedBy String?  @db.Uuid
+  isDeleted Boolean  @default(false)
+  deletedAt DateTime?
+  deletedBy String?  @db.Uuid
+
+  promotions PromotionHistory[]
+  schedules  Schedule[]
+}
+
+model ClassLevel {
+  id        String  @id @default(cuid())
+  name      String  @unique
+  createdAt DateTime @default(now())
+  createdBy String? @db.Uuid
+  updatedAt DateTime @updatedAt
+  updatedBy String? @db.Uuid
+  isDeleted Boolean @default(false)
+  deletedAt DateTime?
+  deletedBy String? @db.Uuid
+
+  classes Class[]
+}
+
+model Class {
+  id           String     @id @default(cuid())
+  name         String
+  levelId      String
+  level        ClassLevel @relation(fields: [levelId], references: [id])
+
+  homeroomTeacherId String? @unique
+  homeroomTeacher   Teacher? @relation("HomeroomTeacher", fields: [homeroomTeacherId], references: [id])
+
+  createdAt DateTime @default(now())
+  createdBy String? @db.Uuid
+  updatedAt DateTime @updatedAt
+  updatedBy String? @db.Uuid
+  isDeleted Boolean  @default(false)
+  deletedAt DateTime?
+  deletedBy String? @db.Uuid
+
+  students     Student[]
+  schedules    Schedule[]
+  assignments  Assignment[]
+  exams        Exam[]
+  promotionsFrom PromotionHistory[] @relation("FromClass")
+  promotionsTo   PromotionHistory[] @relation("ToClass")
+  transfersFrom  ClassTransferHistory[] @relation("TransferFromClass")
+  transfersTo    ClassTransferHistory[] @relation("TransferToClass")
+
+  @@unique([name, levelId])
+}
+
+model Teacher {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id])
+
+  subjects      Subject[]
+  homeroomClass Class?     @relation("HomeroomTeacher")
+  createdExams  Exam[]
+  gradedAnswers StudentAnswer[]
+  gradedAssignments AssignmentSubmission[]
+  createdAt     DateTime   @default(now())
+  createdBy     String?    @db.Uuid
+  updatedAt     DateTime   @updatedAt
+  updatedBy     String?    @db.Uuid
+  isDeleted     Boolean    @default(false)
+  deletedAt     DateTime?
+  deletedBy     String?    @db.Uuid
+
+  @@index([userId])
+}
+
+model Student {
+  id        String    @id @default(cuid())
+  userId    String    @unique
+  user      User      @relation(fields: [userId], references: [id])
+
+  classId   String?
+  class     Class?     @relation(fields: [classId], references: [id])
+
+  createdAt    DateTime  @default(now())
+  createdBy    String?   @db.Uuid
+  updatedAt    DateTime  @updatedAt
+  updatedBy    String?   @db.Uuid
+  isDeleted    Boolean   @default(false)
+  deletedAt    DateTime?
+  deletedBy    String?   @db.Uuid
+
+  enrollments  Enrollment[]
+  attendances  Attendance[]
+  grades       Grade[]
+  payments     Payment[]
+  promotions   PromotionHistory[]
+  answers      StudentAnswer[]
+  submissions Submission[]
+  assignmentSubmissions AssignmentSubmission[]
+  invoices     Invoice[]
+  examTargets      ExamStudentTarget[]
+  assignmentTargets AssignmentStudentTarget[]
+  classTransfers   ClassTransferHistory[]
+
+  @@index([userId])
+  @@index([classId])
+  @@index([isDeleted])
+}
+
+model Subject {
+  id          String   @id @default(cuid())
+  name        String
+  code        String?
+  description String?
+  teacherId  String
+  teacher    Teacher  @relation(fields: [teacherId], references: [id])
+
+  createdAt   DateTime  @default(now())
+  createdBy   String?   @db.Uuid
+  updatedAt   DateTime  @updatedAt
+  updatedBy   String?   @db.Uuid
+  isDeleted   Boolean   @default(false)
+  deletedAt   DateTime?
+  deletedBy   String?   @db.Uuid
+
+  enrollments Enrollment[]
+  assignments Assignment[]
+  exams       Exam[]
+  schedules   Schedule[]
+  grades      Grade[]
+
+  @@index([teacherId])
+  @@index([isDeleted])
+}
+
+model Enrollment {
+  id        String   @id @default(cuid())
+  studentId String
+  student   Student  @relation(fields: [studentId], references: [id])
+  subjectId String
+  subject   Subject  @relation(fields: [subjectId], references: [id])
+  isActive  Boolean  @default(true)
+  enrolledAt DateTime @default(now())
+  createdAt DateTime @default(now())
+  createdBy String?  @db.Uuid
+  updatedAt DateTime @updatedAt
+  updatedBy String?  @db.Uuid
+  isDeleted Boolean  @default(false)
+  deletedAt DateTime?
+  deletedBy String?  @db.Uuid
+
+  @@unique([studentId, subjectId])
+}
+
+model Assignment {
+  id          String    @id @default(cuid())
+  title       String
+  content     String
+  fileUrl     String?
+  dueDate     DateTime
+  points      Float      @default(100)
+  subjectId   String
+  subject     Subject   @relation(fields: [subjectId], references: [id])
+
+  targetType  TargetType @default(CLASS)
+  classId     String?
+  class       Class?     @relation(fields: [classId], references: [id])
+  category    GradeCategory @default(ASSIGNMENT)
+
+  studentTargets AssignmentStudentTarget[]
+  submissions    AssignmentSubmission[]
+  grades      Grade[]
+  createdAt   DateTime   @default(now())
+  createdBy   String?    @db.Uuid
+  updatedAt   DateTime   @updatedAt
+  updatedBy   String?    @db.Uuid
+  isDeleted   Boolean    @default(false)
+  deletedAt   DateTime?
+  deletedBy   String?    @db.Uuid
+
+  @@index([subjectId])
+  @@index([classId])
+  @@index([targetType])
+  @@index([isDeleted])
+}
+
+model Exam {
+  id           String    @id @default(cuid())
+  title       String
+  description String?
+  type        ExamType  @default(MCQ)
+  subjectId   String
+  subject     Subject   @relation(fields: [subjectId], references: [id])
+  dueDate     DateTime?
+  startTime   DateTime?
+  timeLimit   Int       @default(60)
+  totalScore Float     @default(100)
+  isPublished Boolean  @default(false)
+  isActive    Boolean  @default(true)
+  allowRetry  Boolean   @default(false)
+  maxAttempts Int     @default(1)
+  shuffleQuestions Boolean @default(false)
+  shuffleOptions Boolean @default(false)
+  createdById String
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  updatedBy  String?   @db.Uuid
+  isDeleted  Boolean   @default(false)
+  deletedAt  DateTime?
+  deletedBy  String?   @db.Uuid
+
+  targetType  TargetType @default(CLASS)
+  classId     String?
+  class       Class?     @relation(fields: [classId], references: [id])
+  category    GradeCategory @default(WEEKLY_EXAM)
+
+  studentTargets ExamStudentTarget[]
+  questions   Question[]
+  submissions Submission[]
+  grades     Grade[]
+  createdBy   Teacher   @relation(fields: [createdById], references: [id])
+
+  @@index([subjectId])
+  @@index([createdById])
+  @@index([isPublished])
+  @@index([dueDate])
+  @@index([classId])
+  @@index([targetType])
+  @@index([isDeleted])
+}
+
+model Question {
+  id           String       @id @default(cuid())
+  examId       String
+  exam        Exam        @relation(fields: [examId], references: [id], onDelete: Cascade)
+  text        String
+  type        QuestionType @default(MCQ)
+  options     Json?
+  correctAnswer String
+  score       Float        @default(10)
+  order       Int          @default(0)
+  explanation String?
+  isActive    Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+  createdBy   String?     @db.Uuid
+  updatedAt   DateTime    @updatedAt
+  updatedBy   String?     @db.Uuid
+  isDeleted   Boolean     @default(false)
+  deletedAt   DateTime?
+  deletedBy   String?     @db.Uuid
+
+  studentAnswers StudentAnswer[]
+
+  @@index([examId])
+  @@index([isDeleted])
+}
+
+model StudentAnswer {
+  id           String        @id @default(cuid())
+  questionId   String
+  question     Question     @relation(fields: [questionId], references: [id])
+  submissionId String
+  submission   Submission   @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  studentId    String
+  student      Student      @relation(fields: [studentId], references: [id])
+  answer       String
+  score       Float?
+  gradingStatus GradingStatus @default(PENDING)
+  feedback    String?
+  gradedAt    DateTime?
+  gradedById   String?
+  gradedBy    Teacher?     @relation(fields: [gradedById], references: [id])
+  createdAt   DateTime     @default(now())
+  createdBy   String?      @db.Uuid
+  updatedAt   DateTime     @updatedAt
+  updatedBy   String?      @db.Uuid
+  isDeleted   Boolean      @default(false)
+  deletedAt   DateTime?
+  deletedBy   String?      @db.Uuid
+
+  @@unique([submissionId, questionId, studentId])
+  @@index([submissionId])
+  @@index([studentId])
+  @@index([questionId])
+  @@index([isDeleted])
+}
+
+model Submission {
+  id            String          @id @default(cuid())
+  examId        String
+  exam          Exam            @relation(fields: [examId], references: [id])
+  studentId     String
+  student       Student         @relation(fields: [studentId], references: [id])
+  status        SubmissionStatus @default(DRAFT)
+  startedAt     DateTime?
+  submittedAt   DateTime?
+  totalScore    Float?
+  percentage   Float?
+  ipAddress    String?
+  userAgent    String?
+  isAutoSubmitted Boolean      @default(false)
+  createdAt    DateTime        @default(now())
+  createdBy    String?         @db.Uuid
+  updatedAt    DateTime        @updatedAt
+  updatedBy    String?         @db.Uuid
+  isDeleted    Boolean         @default(false)
+  deletedAt    DateTime?
+  deletedBy    String?         @db.Uuid
+
+  answers      StudentAnswer[]
+
+  @@unique([examId, studentId])
+  @@index([examId])
+  @@index([studentId])
+  @@index([status])
+  @@index([submittedAt])
+  @@index([isDeleted])
+}
+
+model Grade {
+  id           String      @id @default(cuid())
+  studentId    String
+  student      Student     @relation(fields: [studentId], references: [id])
+  subjectId    String
+  subject      Subject     @relation(fields: [subjectId], references: [id])
+  assignmentId String?
+  assignment   Assignment? @relation(fields: [assignmentId], references: [id])
+  examId       String?
+  exam         Exam?       @relation(fields: [examId], references: [id])
+  value        Float
+  comment      String?
+  category     GradeCategory?
+  createdAt   DateTime    @default(now())
+  createdBy   String?      @db.Uuid
+  updatedAt   DateTime    @updatedAt
+  updatedBy   String?      @db.Uuid
+  isDeleted   Boolean     @default(false)
+  deletedAt   DateTime?
+  deletedBy   String?      @db.Uuid
+
+  @@index([studentId])
+  @@index([examId])
+  @@index([assignmentId])
+  @@index([isDeleted])
+}
+
+model ExamStudentTarget {
+  id        String   @id @default(cuid())
+  examId    String
+  exam      Exam     @relation(fields: [examId], references: [id], onDelete: Cascade)
+  studentId String
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  createdBy String?  @db.Uuid
+  isDeleted Boolean  @default(false)
+  deletedAt DateTime?
+  deletedBy String?  @db.Uuid
+
+  @@unique([examId, studentId])
+  @@index([examId])
+  @@index([studentId])
+  @@index([isDeleted])
+}
+
+model AssignmentStudentTarget {
+  id           String      @id @default(cuid())
+  assignmentId String
+  assignment   Assignment  @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  studentId    String
+  student      Student     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now())
+  createdBy   String?     @db.Uuid
+  isDeleted   Boolean     @default(false)
+  deletedAt   DateTime?
+  deletedBy   String?     @db.Uuid
+
+  @@unique([assignmentId, studentId])
+  @@index([assignmentId])
+  @@index([studentId])
+  @@index([isDeleted])
+}
+
+model AssignmentSubmission {
+  id           String                   @id @default(cuid())
+  assignmentId String
+  assignment   Assignment               @relation(fields: [assignmentId], references: [id])
+  studentId    String
+  student      Student                  @relation(fields: [studentId], references: [id])
+  content      String?                  @db.Text
+  fileUrl      String?
+  status       AssignmentSubmissionStatus @default(NOT_STARTED)
+  score        Float?
+  feedback     String?
+  gradedAt     DateTime?
+  gradedById   String?
+  gradedBy     Teacher?                 @relation(fields: [gradedById], references: [id])
+  submittedAt   DateTime?
+  createdAt    DateTime                @default(now())
+  createdBy   String?                  @db.Uuid
+  updatedAt    DateTime                @updatedAt
+  updatedBy   String?                  @db.Uuid
+  isDeleted   Boolean                 @default(false)
+  deletedAt   DateTime?
+  deletedBy   String?                  @db.Uuid
+
+  @@unique([assignmentId, studentId])
+  @@index([assignmentId])
+  @@index([studentId])
+  @@index([status])
+  @@index([isDeleted])
+}
+
+model Attendance {
+  id        String           @id @default(cuid())
+  studentId String
+  student   Student          @relation(fields: [studentId], references: [id])
+  date      DateTime
+  status    AttendanceStatus
+  note      String?
+  createdAt DateTime        @default(now())
+  createdBy String?        @db.Uuid
+  updatedAt DateTime        @updatedAt
+  updatedBy String?        @db.Uuid
+
+  @@unique([studentId, date])
+}
+
+model Bulletin {
+  id          String          @id @default(cuid())
+  title       String
+  content     String          @db.Text
+  image       String?   @db.Text
+  isPublished Boolean         @default(false)
+  category    BulletinCategory @default(ANNOUNCEMENT)
+  eventDate   DateTime?
+  status      BulletinStatus   @default(UPCOMING)
+  authorId    String
+  author      User             @relation("BulletinAuthor", fields: [authorId], references: [id])
+  createdAt   DateTime        @default(now())
+  createdBy  String?         @db.Uuid
+  updatedAt   DateTime        @updatedAt
+  updatedBy  String?         @db.Uuid
+  isDeleted  Boolean         @default(false)
+  deletedAt  DateTime?
+  deletedBy  String?         @db.Uuid
+
+  media       BulletinMedia[]
+
+  @@index([status])
+  @@index([authorId])
+  @@index([isPublished])
+}
+
+model BulletinMedia {
+  id         String   @id @default(cuid())
+  bulletinId String
+  bulletin   Bulletin @relation(fields: [bulletinId], references: [id], onDelete: Cascade)
+  image      String   @db.Text
+  order      Int      @default(0)
+  createdAt  DateTime @default(now())
+  createdBy  String?  @db.Uuid
+  isDeleted  Boolean  @default(false)
+  deletedAt  DateTime?
+  deletedBy  String?  @db.Uuid
+
+  @@index([bulletinId])
+  @@index([isDeleted])
+}
+
+model CalendarEvent {
+  id                String            @id @default(cuid())
+  title             String
+  type              CalendarEventType
+  startDate         DateTime
+  endDate           DateTime
+  description       String?           @db.Text
+  affectsAttendance Boolean           @default(false)
+  affectsWorkload   Boolean           @default(false)
+  createdAt         DateTime          @default(now())
+  createdBy        String?           @db.Uuid
+  updatedAt         DateTime          @updatedAt
+  updatedBy        String?           @db.Uuid
+  isDeleted         Boolean          @default(false)
+  deletedAt         DateTime?
+  deletedBy        String?           @db.Uuid
+
+  @@index([startDate, endDate])
+  @@index([type])
+  @@index([isDeleted])
+}
+
+model Inquiry {
+  id            String   @id @default(cuid())
+  parentName    String
+  studentName   String
+  phone         String
+  email         String?
+  gradeInterest String
+  message       String?
+  status        InquiryStatus @default(NEW)
+  createdAt     DateTime @default(now())
+  createdBy    String?  @db.Uuid
+  updatedAt     DateTime @updatedAt
+  updatedBy    String?  @db.Uuid
+  isDeleted     Boolean  @default(false)
+  deletedAt     DateTime?
+  deletedBy    String?  @db.Uuid
+
+  @@index([status])
+  @@index([createdAt])
+  @@index([isDeleted])
+}
+
+enum InquiryStatus {
+  NEW
+  CONTACTED
+  ENROLLED
+  REJECTED
+}
+
+model Payment {
+  id          String    @id @default(cuid())
+  invoiceId   String?
+  invoice     Invoice?  @relation(fields: [invoiceId], references: [id])
+  studentId   String
+  student     Student   @relation(fields: [studentId], references: [id])
+  amount      Float
+  method      String?
+  note        String?
+  paymentDate DateTime  @default(now())
+  createdAt   DateTime  @default(now())
+  createdBy   String?   @db.Uuid
+  updatedAt   DateTime  @updatedAt
+  updatedBy   String?   @db.Uuid
+  isDeleted   Boolean   @default(false)
+  deletedAt   DateTime?
+  deletedBy   String?   @db.Uuid
+
+  @@index([studentId])
+  @@index([invoiceId])
+  @@index([paymentDate])
+  @@index([isDeleted])
+}
+
+model Schedule {
+  id            String       @id @default(cuid())
+  subjectId     String
+  subject       Subject      @relation(fields: [subjectId], references: [id])
+  classId       String
+  class         Class        @relation(fields: [classId], references: [id])
+  academicYearId String
+  academicYear  AcademicYear @relation(fields: [academicYearId], references: [id])
+  dayOfWeek     Int
+  startTime     String
+  endTime       String
+  room          String?
+  createdAt     DateTime     @default(now())
+  createdBy     String?      @db.Uuid
+  updatedAt     DateTime     @updatedAt
+  updatedBy     String?      @db.Uuid
+  isDeleted     Boolean      @default(false)
+  deletedAt     DateTime?
+  deletedBy     String?      @db.Uuid
+
+  @@unique([subjectId, classId, academicYearId, dayOfWeek, startTime])
+}
+
+model ClassTransferHistory {
+  id            String    @id @default(cuid())
+  studentId     String
+  student       Student   @relation(fields: [studentId], references: [id])
+  fromClassId   String?
+  fromClass     Class?    @relation("TransferFromClass", fields: [fromClassId], references: [id])
+  toClassId     String
+  toClass       Class     @relation("TransferToClass", fields: [toClassId], references: [id])
+  reason        String?
+  transferredAt DateTime  @default(now())
+  createdAt    DateTime  @default(now())
+  createdBy    String?   @db.Uuid
+  isDeleted    Boolean   @default(false)
+  deletedAt    DateTime?
+  deletedBy    String?   @db.Uuid
+
+  @@index([studentId])
+  @@index([transferredAt])
+  @@index([isDeleted])
+}
+
+model PromotionHistory {
+  id          String       @id @default(cuid())
+  studentId   String
+  student     Student      @relation(fields: [studentId], references: [id])
+  fromClassId String?
+  fromClass   Class?       @relation("FromClass", fields: [fromClassId], references: [id])
+  toClassId   String
+  toClass     Class        @relation("ToClass", fields: [toClassId], references: [id])
+  yearId      String
+  year        AcademicYear @relation(fields: [yearId], references: [id])
+  promotedAt  DateTime     @default(now())
+  createdAt   DateTime     @default(now())
+  createdBy   String?      @db.Uuid
+  isDeleted   Boolean      @default(false)
+  deletedAt   DateTime?
+  deletedBy   String?      @db.Uuid
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  user      User              @relation(fields: [userId], references: [id])
+  type      NotificationType
+  title     String
+  message   String
+  isRead    Boolean          @default(false)
+  data      Json?
+  createdAt DateTime         @default(now())
+  createdBy String?          @db.Uuid
+  isDeleted Boolean          @default(false)
+  deletedAt DateTime?
+  deletedBy String?          @db.Uuid
+
+  @@index([userId])
+  @@index([createdAt])
+  @@index([isDeleted])
+}
+
+model Invoice {
+  id          String      @id @default(cuid())
+  studentId   String
+  student    Student     @relation(fields: [studentId], references: [id])
+  title      String
+  amount     Float
+  type       PaymentType
+  description String?
+  month      Int?
+  year       Int?
+  dueDate    DateTime
+  status     PaymentStatus @default(UNPAID)
+  paidAmount Float        @default(0)
+  paidAt     DateTime?
+  createdAt  DateTime    @default(now())
+  createdBy  String?     @db.Uuid
+  updatedAt  DateTime    @updatedAt
+  updatedBy  String?     @db.Uuid
+  isDeleted  Boolean     @default(false)
+  deletedAt  DateTime?
+  deletedBy  String?     @db.Uuid
+
+  payments   Payment[]
+
+  @@index([studentId])
+  @@index([status])
+  @@index([year, month])
+  @@index([isDeleted])
+}
+
+// ============================================================
+// AUDIT LOG SYSTEM
+// ============================================================
+// Stores a complete audit trail of all data changes.
+// For each CREATE/UPDATE/SOFT_DELETE operation:
+//   - oldData: JSON snapshot before the change (null for CREATE)
+//   - newData: JSON snapshot after the change (null for DELETE)
+//
+// The audit interceptor (audit.ts middleware) automatically
+// populates these on all write operations.
+// ============================================================
+
+model AuditLog {
+  id          String      @id @default(cuid())
+  timestamp   DateTime    @default(now())
+  userId      String
+  user        User        @relation(fields: [userId], references: [id])
+
+  // Action type
+  action      AuditAction
+  entity      String     // e.g. "User", "Student", "Grade"
+  entityId    String?
+
+  // Snapshot of data before and after the change
+  oldData     Json?
+  newData     Json?
+
+  // Additional metadata
+  ipAddress   String?
+  userAgent   String?
+  details     Json?
+
+  createdAt   DateTime   @default(now())
+
+  @@index([userId])
+  @@index([entity, entityId])
+  @@index([timestamp])
+  @@index([action])
+  @@index([entity])
+}
