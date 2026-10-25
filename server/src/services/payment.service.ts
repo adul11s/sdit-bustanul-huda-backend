@@ -1,5 +1,11 @@
 import prisma from '../utils/prisma.js';
 import type { CreateInvoiceDto, CreatePaymentDto, PaginatedResponse } from '../types/index.js';
+import type { Prisma } from '@prisma/client';
+
+type InvoiceWithRelations = Prisma.InvoiceGetPayload<{ include: {
+  student: { include: { user: { select: { id: true; name: true } }; class: { include: { level: true } } } };
+  payments: true;
+} }>;
 
 function calculateStatus(paidAmount: number, amount: number): 'UNPAID' | 'PARTIAL' | 'PAID' {
   if (paidAmount >= amount) return 'PAID';
@@ -17,7 +23,7 @@ function normalizeInvoice(inv: any) {
 }
 
 export class PaymentService {
-  async getInvoices(studentId?: string, status?: string, page = 1, limit = 10): Promise<PaginatedResponse> {
+  async getInvoices(studentId?: string, status?: string, page = 1, limit = 10): Promise<PaginatedResponse<InvoiceWithRelations>> {
     const where: any = {};
     if (studentId) where.studentId = studentId;
 

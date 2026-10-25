@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -13,7 +13,7 @@ async function main() {
   if (!teacher) {
     const user = await prisma.user.findFirst({ where: { role: 'TEACHER' } });
     if (user) {
-      teacher = await prisma.teacher.create({ data: { userId: user.id } });
+      teacher = await prisma.teacher.create({ include: { user: true }, data: { userId: user.id } });
     } else {
       console.log('No teacher found. Creating one...');
       const user = await prisma.user.create({
@@ -24,7 +24,7 @@ async function main() {
           role: 'TEACHER',
         }
       });
-      teacher = await prisma.teacher.create({ data: { userId: user.id } });
+      teacher = await prisma.teacher.create({ include: { user: true }, data: { userId: user.id } });
     }
   }
 
@@ -88,7 +88,7 @@ async function main() {
       id: 'test-exam-1',
       title: 'Mathematics Quiz - Week 1',
       description: 'A simple quiz to test your understanding of basic math',
-      type: 'MCQ',
+      type: 'MCQ' as const,
       subjectId: subject.id,
       timeLimit: 30,
       totalScore: 40,
@@ -105,7 +105,7 @@ async function main() {
   const questions = [
     {
       text: 'What is 2 + 2?',
-      type: 'MCQ',
+      type: 'MCQ' as const,
       options: ['1', '2', '3', '4'],
       correctAnswer: 'D',
       score: 10,
@@ -113,7 +113,7 @@ async function main() {
     },
     {
       text: 'What is 5 x 3?',
-      type: 'MCQ',
+      type: 'MCQ' as const,
       options: ['10', '12', '15', '20'],
       correctAnswer: 'C',
       score: 10,
@@ -121,7 +121,7 @@ async function main() {
     },
     {
       text: 'What is 10 - 4?',
-      type: 'MCQ',
+      type: 'MCQ' as const,
       options: ['4', '5', '6', '7'],
       correctAnswer: 'C',
       score: 10,
@@ -129,7 +129,7 @@ async function main() {
     },
     {
       text: 'What is 20 ÷ 2?',
-      type: 'MCQ',
+      type: 'MCQ' as const,
       options: ['5', '8', '10', '12'],
       correctAnswer: 'C',
       score: 10,
@@ -138,12 +138,11 @@ async function main() {
   ];
 
   for (const q of questions) {
-    await prisma.question.create({
-      data: {
-        examId: exam.id,
-        ...q,
-      },
-    });
+    const data: Prisma.QuestionUncheckedCreateInput = {
+      examId: exam.id,
+      ...q,
+    } satisfies Prisma.QuestionUncheckedCreateInput;
+    await prisma.question.create({ data });
   }
 
   console.log(`Created ${questions.length} questions`);

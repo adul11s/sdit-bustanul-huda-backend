@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Express } from 'express';
 import cookieParser from 'cookie-parser';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -28,9 +28,8 @@ const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',')
   : ['http://localhost:5173', 'http://localhost:3000'];
 
-async function startServer() {
+export function createApp() {
   const app = express();
-  const PORT = process.env.PORT || 3000;
 
   app.use(express.json({ limit: '50mb' }));
   app.use(express.urlencoded({ extended: true, limit: '50mb' }));
@@ -70,10 +69,18 @@ async function startServer() {
   app.use(notFoundHandler);
   app.use(errorHandler);
 
+  return app;
+}
+
+async function startServer() {
+  const app = createApp();
+  const PORT = process.env.PORT || 3000;
   const portNum = typeof PORT === 'string' ? parseInt(PORT, 10) : PORT;
   app.listen(portNum, () => {
     console.log(`🏫 SDIT Bustanul Huda API running on http://localhost:${portNum}`);
   });
 }
 
-startServer().catch(console.error);
+if (!process.env.VITEST && !process.env.NODE_ENV?.includes('test')) {
+  startServer().catch(console.error);
+}

@@ -129,6 +129,7 @@ enum NotificationType {
   BULLETIN
   PROMOTION
   GENERAL
+  GRADE
 }
 
 enum AuditAction {
@@ -141,6 +142,7 @@ enum AuditAction {
   LOGOUT
   PASSWORD_CHANGE
   STATUS_CHANGE
+  ERROR
 }
 
 model User {

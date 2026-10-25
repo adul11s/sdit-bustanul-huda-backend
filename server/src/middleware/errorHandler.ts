@@ -1,16 +1,17 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import prisma from '../utils/prisma.js';
+import type { AuditAction } from './audit.js';
 
-export const auditLogger = (action: string, entity: string) => {
+export const auditLogger = (action: AuditAction | string, entity: string) => {
   return async (req: Request, res: Response, next: NextFunction) => {
-    const originalSend = res.send;
-    
+    const originalSend = res.send.bind(res);
+
     res.send = function(body: any) {
       if (res.statusCode >= 200 && res.statusCode < 300 && req.user?.userId) {
         prisma.auditLog.create({
           data: {
             userId: req.user.userId,
-            action,
+            action: action as AuditAction,
             entity,
             entityId: req.params.id || body?.id,
             details: { body: req.body, params: req.params },

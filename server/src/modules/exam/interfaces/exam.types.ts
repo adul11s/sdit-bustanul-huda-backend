@@ -1,3 +1,21 @@
+export interface IQuestionFileRow {
+  question: string;
+  type: 'mcq' | 'essay';
+  score: number;
+  option_a: string;
+  option_b: string;
+  option_c: string;
+  option_d: string;
+  correct_answer: string;
+}
+
+export interface IFileValidationResult {
+  isValid: boolean;
+  errors: string[];
+  validRows: IQuestionFileRow[];
+  totalRows: number;
+}
+
 export interface IExam {
   id: string;
   title: string;
@@ -33,10 +51,10 @@ export interface IExamWithRelations extends IExam {
       name: string;
     };
   };
-  questions: IQuestion[];
+  questions?: IQuestion[];
   _count?: {
     questions: number;
-    submissions: number;
+    submissions?: number;
   };
 }
 
@@ -77,16 +95,18 @@ export interface IStudentAnswer {
 }
 
 export interface IStudentAnswerWithRelations extends IStudentAnswer {
-  question: IQuestion;
-  submission: ISubmission;
-  student: {
+  question?: Partial<IQuestion>;
+  submission?: Partial<ISubmission> & {
+    exam?: { id: string; title: string };
+  };
+  student?: {
     id: string;
     user: {
       name: string;
       email: string;
     };
   };
-  gradedBy: {
+  gradedBy?: {
     id: string;
     user: {
       name: string;
@@ -166,6 +186,7 @@ export interface IUpdateQuestionDTO extends Partial<ICreateQuestionDTO> {
 }
 
 export interface ICreateQuestionsBatchDTO {
+  examId?: string;
   questions: ICreateQuestionDTO[];
 }
 

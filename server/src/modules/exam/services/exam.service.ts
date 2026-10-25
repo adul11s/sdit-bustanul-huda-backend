@@ -56,7 +56,7 @@ export class ExamService {
     if (exam.createdById !== teacherId) {
       throw new Error('Unauthorized');
     }
-    if (exam.questions.length === 0) {
+    if (!exam.questions || exam.questions.length === 0) {
       throw new Error('Cannot publish exam without questions');
     }
     return await this.repository.update(id, { isPublished: true });

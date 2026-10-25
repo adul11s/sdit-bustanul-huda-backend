@@ -42,7 +42,7 @@ router.get('/invoices/:id', async (req: Request, res: Response) => {
   }
 });
 
-router.post('/invoices', auditLog('CREATE_INVOICE', 'Invoice'), async (req: Request, res: Response) => {
+router.post('/invoices', auditLog('CREATE', 'Invoice'), async (req: Request, res: Response) => {
   try {
     const invoice = await paymentService.createInvoice(req.body);
     res.json({ success: true, data: invoice });
@@ -51,7 +51,7 @@ router.post('/invoices', auditLog('CREATE_INVOICE', 'Invoice'), async (req: Requ
   }
 });
 
-router.post('/invoices/targeted', auditLog('CREATE_TARGETED_INVOICES', 'Invoice'), async (req: Request, res: Response) => {
+router.post('/invoices/targeted', auditLog('CREATE', 'Invoice'), async (req: Request, res: Response) => {
   try {
     const { targetType, classId, studentIds, title, description, amount, type, dueDate } = req.body;
     if (!title || !amount || !dueDate) {
@@ -78,7 +78,7 @@ router.post('/invoices/targeted', auditLog('CREATE_TARGETED_INVOICES', 'Invoice'
   }
 });
 
-router.put('/invoices/:id', auditLog('UPDATE_INVOICE', 'Invoice', (req) => req.params.id), async (req: Request, res: Response) => {
+router.put('/invoices/:id', auditLog('UPDATE', 'Invoice', (req) => req.params.id), async (req: Request, res: Response) => {
   try {
     const invoice = await paymentService.updateInvoice(req.params.id, req.body);
     res.json({ success: true, data: invoice });
@@ -87,7 +87,7 @@ router.put('/invoices/:id', auditLog('UPDATE_INVOICE', 'Invoice', (req) => req.p
   }
 });
 
-router.delete('/invoices/:id', auditLog('DELETE_INVOICE', 'Invoice', (req) => req.params.id), async (req: Request, res: Response) => {
+router.delete('/invoices/:id', auditLog('DELETE', 'Invoice', (req) => req.params.id), async (req: Request, res: Response) => {
   try {
     await paymentService.deleteInvoice(req.params.id);
     res.json({ success: true, message: 'Invoice deleted' });
@@ -98,7 +98,7 @@ router.delete('/invoices/:id', auditLog('DELETE_INVOICE', 'Invoice', (req) => re
 
 // ─── Payments ───────────────────────────────────────────────
 
-router.post('/payments', validateBody(processPaymentSchema), auditLog('PROCESS_PAYMENT', 'Payment'), async (req: Request, res: Response) => {
+router.post('/payments', validateBody(processPaymentSchema), auditLog('CREATE', 'Payment'), async (req: Request, res: Response) => {
   try {
     const payment = await paymentService.processPayment(req.body);
     res.json({ success: true, data: payment });
@@ -148,7 +148,7 @@ router.get('/overdue', async (req: Request, res: Response) => {
 
 // ─── Bulk / Legacy ──────────────────────────────────────────
 
-router.post('/invoices/bulk', auditLog('CREATE_BULK_INVOICES', 'Invoice'), async (req: Request, res: Response) => {
+router.post('/invoices/bulk', auditLog('CREATE', 'Invoice'), async (req: Request, res: Response) => {
   try {
     const { studentIds, title, amount, type, dueDate } = req.body;
     const invoices = await paymentService.generateBulkInvoice(studentIds, title, amount, type, new Date(dueDate));
@@ -227,7 +227,7 @@ router.post('/inquiries/:id/status', async (req: Request, res: Response) => {
 
 // ─── Data Repair ────────────────────────────────────────────
 
-router.post('/repair-invoice-statuses', auditLog('REPAIR_INVOICE_STATUSES', 'Invoice'), async (req: Request, res: Response) => {
+router.post('/repair-invoice-statuses', auditLog('UPDATE', 'Invoice'), async (req: Request, res: Response) => {
   try {
     const fixed = await paymentService.repairInvoiceStatuses();
     res.json({ success: true, message: `Repaired ${fixed} invoice(s)`, fixed });

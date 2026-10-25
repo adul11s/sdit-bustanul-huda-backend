@@ -38,7 +38,7 @@ router.get('/users/:id', async (req: Request, res: Response) => {
   }
 });
 
-router.post('/users', auditLog('CREATE_USER', 'User'), async (req: Request, res: Response) => {
+router.post('/users', auditLog('CREATE', 'User'), async (req: Request, res: Response) => {
   try {
     const user = await userService.create(req.body);
     res.json({ success: true, data: user });
@@ -47,7 +47,7 @@ router.post('/users', auditLog('CREATE_USER', 'User'), async (req: Request, res:
   }
 });
 
-router.put('/users/:id', auditLog('UPDATE_USER', 'User', (req) => req.params.id), async (req: Request, res: Response) => {
+router.put('/users/:id', auditLog('UPDATE', 'User', (req) => req.params.id), async (req: Request, res: Response) => {
   try {
     const user = await userService.update(req.params.id, req.body);
     res.json({ success: true, data: user });
@@ -56,7 +56,7 @@ router.put('/users/:id', auditLog('UPDATE_USER', 'User', (req) => req.params.id)
   }
 });
 
-router.delete('/users/:id', auditLog('DELETE_USER', 'User', (req) => req.params.id), async (req: Request, res: Response) => {
+router.delete('/users/:id', auditLog('DELETE', 'User', (req) => req.params.id), async (req: Request, res: Response) => {
   try {
     await userService.delete(req.params.id);
     res.json({ success: true, message: 'User deactivated' });
@@ -65,7 +65,7 @@ router.delete('/users/:id', auditLog('DELETE_USER', 'User', (req) => req.params.
   }
 });
 
-router.post('/users/bulk', auditLog('CREATE_USERS_BULK', 'User'), async (req: Request, res: Response) => {
+router.post('/users/bulk', auditLog('CREATE', 'User'), async (req: Request, res: Response) => {
   try {
     const { users, defaultPassword } = req.body;
     const results = [];
@@ -85,7 +85,7 @@ router.post('/users/bulk', auditLog('CREATE_USERS_BULK', 'User'), async (req: Re
   }
 });
 
-router.post('/users/:id/activate', auditLog('ACTIVATE_USER', 'User', (req) => req.params.id), async (req: Request, res: Response) => {
+router.post('/users/:id/activate', auditLog('STATUS_CHANGE', 'User', (req) => req.params.id), async (req: Request, res: Response) => {
   try {
     const user = await userService.activate(req.params.id);
     res.json({ success: true, data: user });
@@ -121,7 +121,7 @@ router.post('/class-levels', async (req: Request, res: Response) => {
   }
 });
 
-router.post('/classes', auditLog('CREATE_CLASS', 'Class'), async (req: Request, res: Response) => {
+router.post('/classes', auditLog('CREATE', 'Class'), async (req: Request, res: Response) => {
   try {
     const classData = await academicService.createClass(req.body);
     res.json({ success: true, data: classData });
@@ -130,7 +130,7 @@ router.post('/classes', auditLog('CREATE_CLASS', 'Class'), async (req: Request, 
   }
 });
 
-router.post('/classes/:id/homeroom', auditLog('ASSIGN_HOMEROOM', 'Class', (req) => req.params.id), async (req: Request, res: Response) => {
+router.post('/classes/:id/homeroom', auditLog('UPDATE', 'Class', (req) => req.params.id), async (req: Request, res: Response) => {
   try {
     const classData = await academicService.assignHomeroomTeacher(req.params.id, req.body.teacherId);
     res.json({ success: true, data: classData });
@@ -148,7 +148,7 @@ router.get('/subjects', async (req: Request, res: Response) => {
   }
 });
 
-router.post('/subjects', auditLog('CREATE_SUBJECT', 'Subject'), async (req: Request, res: Response) => {
+router.post('/subjects', auditLog('CREATE', 'Subject'), async (req: Request, res: Response) => {
   try {
     const subject = await academicService.createSubject(req.body);
     res.json({ success: true, data: subject });
@@ -157,7 +157,7 @@ router.post('/subjects', auditLog('CREATE_SUBJECT', 'Subject'), async (req: Requ
   }
 });
 
-router.put('/subjects/:id', auditLog('UPDATE_SUBJECT', 'Subject', (req) => req.params.id), async (req: Request, res: Response) => {
+router.put('/subjects/:id', auditLog('UPDATE', 'Subject', (req) => req.params.id), async (req: Request, res: Response) => {
   try {
     const subject = await prisma.subject.update({
       where: { id: req.params.id },
@@ -170,7 +170,7 @@ router.put('/subjects/:id', auditLog('UPDATE_SUBJECT', 'Subject', (req) => req.p
   }
 });
 
-router.delete('/subjects/:id', auditLog('DELETE_SUBJECT', 'Subject', (req) => req.params.id), async (req: Request, res: Response) => {
+router.delete('/subjects/:id', auditLog('DELETE', 'Subject', (req) => req.params.id), async (req: Request, res: Response) => {
   try {
     await academicService.deleteSubject(req.params.id);
     res.json({ success: true, message: 'Subject deleted' });
@@ -188,7 +188,7 @@ router.get('/academic-years', async (req: Request, res: Response) => {
   }
 });
 
-router.post('/academic-years', auditLog('CREATE_ACADEMIC_YEAR', 'AcademicYear'), async (req: Request, res: Response) => {
+router.post('/academic-years', auditLog('CREATE', 'AcademicYear'), async (req: Request, res: Response) => {
   try {
     const year = await academicService.createAcademicYear(req.body.name, new Date(req.body.startDate), new Date(req.body.endDate));
     res.json({ success: true, data: year });
@@ -197,7 +197,7 @@ router.post('/academic-years', auditLog('CREATE_ACADEMIC_YEAR', 'AcademicYear'),
   }
 });
 
-router.post('/academic-years/:id/set-current', auditLog('SET_CURRENT_YEAR', 'AcademicYear', (req) => req.params.id), async (req: Request, res: Response) => {
+router.post('/academic-years/:id/set-current', auditLog('UPDATE', 'AcademicYear', (req) => req.params.id), async (req: Request, res: Response) => {
   try {
     const year = await academicService.setCurrentAcademicYear(req.params.id);
     res.json({ success: true, data: year });
@@ -206,7 +206,7 @@ router.post('/academic-years/:id/set-current', auditLog('SET_CURRENT_YEAR', 'Aca
   }
 });
 
-router.post('/promotions', auditLog('PROMOTE_STUDENTS', 'PromotionHistory'), async (req: Request, res: Response) => {
+router.post('/promotions', auditLog('UPDATE', 'PromotionHistory'), async (req: Request, res: Response) => {
   try {
     const result = await academicService.promoteStudents(req.body.students);
     res.json({ success: true, data: result });
@@ -215,7 +215,7 @@ router.post('/promotions', auditLog('PROMOTE_STUDENTS', 'PromotionHistory'), asy
   }
 });
 
-router.post('/schedules', auditLog('CREATE_SCHEDULE', 'Schedule'), async (req: Request, res: Response) => {
+router.post('/schedules', auditLog('CREATE', 'Schedule'), async (req: Request, res: Response) => {
   try {
     // Validate schedule before creating
     const validation = await scheduleValidationService.validateSchedule(req.body);
@@ -379,7 +379,7 @@ router.get('/classes/:classId/students', async (req: Request, res: Response) => 
   }
 });
 
-router.post('/students/:studentId/assign-class', auditLog('ASSIGN_STUDENT_CLASS', 'Student', (req) => req.params.studentId), async (req: Request, res: Response) => {
+router.post('/students/:studentId/assign-class', auditLog('UPDATE', 'Student', (req) => req.params.studentId), async (req: Request, res: Response) => {
   try {
     const student = await studentManagementService.assignStudentToClass(req.params.studentId, req.body.classId);
     res.json({ success: true, data: student });
@@ -388,7 +388,7 @@ router.post('/students/:studentId/assign-class', auditLog('ASSIGN_STUDENT_CLASS'
   }
 });
 
-router.post('/students/transfer', auditLog('TRANSFER_STUDENT', 'ClassTransferHistory'), async (req: Request, res: Response) => {
+router.post('/students/transfer', auditLog('UPDATE', 'ClassTransferHistory'), async (req: Request, res: Response) => {
   try {
     const result = await studentManagementService.transferStudent(req.body);
     res.json({ success: true, data: result });
@@ -430,7 +430,7 @@ router.post('/inquiries/:id/status', async (req: Request, res: Response) => {
   }
 });
 
-router.post('/invoices/generate-monthly', auditLog('GENERATE_MONTHLY_INVOICES', 'Invoice'), async (req: Request, res: Response) => {
+router.post('/invoices/generate-monthly', auditLog('CREATE', 'Invoice'), async (req: Request, res: Response) => {
   try {
     const { year, month, amount, dueDate } = req.body;
     const invoices = await academicService.generateMonthlyInvoices(year, month, amount, new Date(dueDate));
@@ -464,7 +464,7 @@ router.get('/calendar-events/:id', async (req: Request, res: Response) => {
   }
 });
 
-router.post('/calendar-events', auditLog('CREATE_CALENDAR_EVENT', 'CalendarEvent'), async (req: Request, res: Response) => {
+router.post('/calendar-events', auditLog('CREATE', 'CalendarEvent'), async (req: Request, res: Response) => {
   try {
     const event = await calendarService.createEvent(req.body);
     res.json({ success: true, data: event });
@@ -473,7 +473,7 @@ router.post('/calendar-events', auditLog('CREATE_CALENDAR_EVENT', 'CalendarEvent
   }
 });
 
-router.put('/calendar-events/:id', auditLog('UPDATE_CALENDAR_EVENT', 'CalendarEvent', (req) => req.params.id), async (req: Request, res: Response) => {
+router.put('/calendar-events/:id', auditLog('UPDATE', 'CalendarEvent', (req) => req.params.id), async (req: Request, res: Response) => {
   try {
     const event = await calendarService.updateEvent(req.params.id, req.body);
     res.json({ success: true, data: event });
@@ -482,7 +482,7 @@ router.put('/calendar-events/:id', auditLog('UPDATE_CALENDAR_EVENT', 'CalendarEv
   }
 });
 
-router.delete('/calendar-events/:id', auditLog('DELETE_CALENDAR_EVENT', 'CalendarEvent', (req) => req.params.id), async (req: Request, res: Response) => {
+router.delete('/calendar-events/:id', auditLog('DELETE', 'CalendarEvent', (req) => req.params.id), async (req: Request, res: Response) => {
   try {
     await calendarService.deleteEvent(req.params.id);
     res.json({ success: true, message: 'Event deleted' });
@@ -517,7 +517,7 @@ router.get('/bulletins/:id', async (req: Request, res: Response) => {
   }
 });
 
-router.post('/bulletins', auditLog('CREATE_BULLETIN', 'Bulletin'), async (req: Request, res: Response) => {
+router.post('/bulletins', auditLog('CREATE', 'Bulletin'), async (req: Request, res: Response) => {
   try {
     const bulletin = await academicService.createBulletin((req as any).user.userId, req.body);
     res.json({ success: true, data: bulletin });
@@ -526,7 +526,7 @@ router.post('/bulletins', auditLog('CREATE_BULLETIN', 'Bulletin'), async (req: R
   }
 });
 
-router.put('/bulletins/:id', auditLog('UPDATE_BULLETIN', 'Bulletin', (req) => req.params.id), async (req: Request, res: Response) => {
+router.put('/bulletins/:id', auditLog('UPDATE', 'Bulletin', (req) => req.params.id), async (req: Request, res: Response) => {
   try {
     const bulletin = await academicService.updateBulletin(req.params.id, req.body);
     res.json({ success: true, data: bulletin });
@@ -535,7 +535,7 @@ router.put('/bulletins/:id', auditLog('UPDATE_BULLETIN', 'Bulletin', (req) => re
   }
 });
 
-router.delete('/bulletins/:id', auditLog('DELETE_BULLETIN', 'Bulletin', (req) => req.params.id), async (req: Request, res: Response) => {
+router.delete('/bulletins/:id', auditLog('DELETE', 'Bulletin', (req) => req.params.id), async (req: Request, res: Response) => {
   try {
     await academicService.deleteBulletin(req.params.id);
     res.json({ success: true, message: 'Bulletin deleted' });

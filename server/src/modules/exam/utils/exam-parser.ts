@@ -1,4 +1,4 @@
-import { IFileValidationResult, IQuestionFileRow } from '../../interfaces/exam.types.js';
+import { IFileValidationResult, IQuestionFileRow } from '../interfaces/exam.types.js';
 
 export class ExamParser {
   parseFile(content: string, fileName: string): IFileValidationResult {
@@ -94,7 +94,7 @@ export class ExamParser {
         option_d: values[headerMap['option_d']]?.trim() || '',
         correct_answer: values[headerMap['correct_answer']]?.trim() || '',
         score,
-        type,
+        type: type as 'mcq' | 'essay',
       };
 
       if (type === 'mcq') {

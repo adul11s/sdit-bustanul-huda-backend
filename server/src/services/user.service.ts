@@ -1,9 +1,20 @@
 import bcrypt from 'bcryptjs';
 import prisma from '../utils/prisma.js';
-import type { CreateUserDto, UpdateUserDto, PaginatedResponse } from '../types/index.js';
+import type { CreateUserDto, UpdateUserDto, PaginatedResponse, Role, Gender } from '../types/index.js';
+
+type UserListItem = {
+  id: string;
+  email: string;
+  name: string;
+  role: Role;
+  phone: string | null;
+  gender: Gender | null;
+  isActive: boolean;
+  createdAt: Date;
+};
 
 export class UserService {
-  async findAll(page = 1, limit = 10, role?: string): Promise<PaginatedResponse> {
+  async findAll(page = 1, limit = 10, role?: string): Promise<PaginatedResponse<UserListItem>> {
     const where = role ? { role: role as any } : {};
 
     const [users, total] = await Promise.all([

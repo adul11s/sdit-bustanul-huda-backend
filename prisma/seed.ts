@@ -1,4 +1,4 @@
-import { PrismaClient, Gender, Role, AttendanceStatus, PaymentStatus, PaymentType, GradeCategory, ExamType, QuestionType, CalendarEventType } from '@prisma/client';
+import { PrismaClient, Prisma, Gender, Role, AttendanceStatus, PaymentStatus, PaymentType, GradeCategory, ExamType, QuestionType, CalendarEventType } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
@@ -503,12 +503,13 @@ async function main() {
 
   // Bulletins
   const bulletins = [
-    { title: 'Penerimaan Siswa Baru 2025/2026', content: 'Pendaftaran siswa baru telah dibuka. Segera daftarkan putra/putri Anda.', category: 'ANNOUNCEMENT', status: 'ONGOING' as any },
-    { title: 'Juara Olimpiade Matematika', content: 'Selamat kepada Ahmad Fauzi kelas 1A yang meraih juara 1 Olimpiade Matematika tingkat kota.', category: 'ACHIEVEMENT', status: 'ONGOING' as any },
-    { title: 'Peringatan Maulid Nabi', content: 'Kegiatan peringatan Maulid Nabi akan dilaksanakan pada hari Kamis besok.', category: 'EVENT', status: 'ONGOING' as any },
+    { title: 'Penerimaan Siswa Baru 2025/2026', content: 'Pendaftaran siswa baru telah dibuka. Segera daftarkan putra/putri Anda.', category: 'ANNOUNCEMENT' as const, status: 'ONGOING' as any },
+    { title: 'Juara Olimpiade Matematika', content: 'Selamat kepada Ahmad Fauzi kelas 1A yang meraih juara 1 Olimpiade Matematika tingkat kota.', category: 'ACHIEVEMENT' as const, status: 'ONGOING' as any },
+    { title: 'Peringatan Maulid Nabi', content: 'Kegiatan peringatan Maulid Nabi akan dilaksanakan pada hari Kamis besok.', category: 'EVENT' as const, status: 'ONGOING' as any },
   ];
   for (const b of bulletins) {
-    await prisma.bulletin.create({ data: { ...b, authorId: adminUser.id } });
+    const data: Prisma.BulletinUncheckedCreateInput = { ...b, authorId: adminUser.id } satisfies Prisma.BulletinUncheckedCreateInput;
+    await prisma.bulletin.create({ data });
   }
   console.log(`📰 ${bulletins.length} Bulletins created`);
 

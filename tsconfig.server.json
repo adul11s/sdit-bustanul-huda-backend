@@ -5,13 +5,12 @@
     "moduleResolution": "bundler",
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
-    "strict": false,
-    "noImplicitAny": false,
+    "strict": true,
+    "noImplicitAny": true,
     "skipLibCheck": true,
     "outDir": "dist",
     "rootDir": ".",
     "resolveJsonModule": true,
-    "ignoreDeprecations": "6.0"
   },
   "include": ["server/src", "server.ts", "prisma"],
   "exclude": ["node_modules", "dist"]

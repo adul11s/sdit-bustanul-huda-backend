@@ -31,7 +31,11 @@ router.post('/', roleMiddleware(['ADMIN']), async (req: Request, res: Response) 
   try {
     const userId = (req as any).user?.userId;
     const bulletin = await academicService.createBulletin(userId, req.body);
-    
+    if (!bulletin) {
+      res.status(500).json({ success: false, error: 'Failed to create bulletin' });
+      return;
+    }
+
     const users = await prisma.user.findMany({ select: { id: true } });
     await prisma.notification.createMany({
       data: users.map(u => ({

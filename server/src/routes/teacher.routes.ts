@@ -59,7 +59,7 @@ router.get('/exams', async (req: Request, res: Response) => {
 
 router.post('/exams', async (req: Request, res: Response) => {
   try {
-    const exam = await academicService.createExam(req.body);
+    const exam = await academicService.createExam(req.body, (req as any).user?.userId);
     res.json({ success: true, data: exam });
   } catch (error) {
     res.status(500).json({ success: false, error: 'Internal server error' });
@@ -565,7 +565,10 @@ router.get('/assignment-submissions', async (req: Request, res: Response) => {
 
     const where: any = {};
     if (assignmentId) {
-      const assignment = await prisma.assignment.findUnique({ where: { id: assignmentId as string } });
+      const assignment = await prisma.assignment.findUnique({
+        where: { id: assignmentId as string },
+        include: { subject: { select: { teacherId: true } } },
+      });
       if (!assignment || assignment.subject.teacherId !== teacher.id) {
         return res.status(403).json({ success: false, error: 'Not authorized' });
       }

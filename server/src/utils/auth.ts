@@ -12,7 +12,7 @@ export interface TokenPayload {
 }
 
 export async function generateToken(payload: TokenPayload): Promise<string> {
-  return new SignJWT(payload)
+  return new SignJWT({ ...payload })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
     .setExpirationTime('7d')
@@ -22,7 +22,7 @@ export async function generateToken(payload: TokenPayload): Promise<string> {
 export async function verifyToken(token: string): Promise<TokenPayload | null> {
   try {
     const { payload } = await jwtVerify(token, JWT_SECRET);
-    return payload as TokenPayload;
+    return payload as unknown as TokenPayload;
   } catch {
     return null;
   }

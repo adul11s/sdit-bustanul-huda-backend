@@ -1,4 +1,6 @@
 import prisma from '../utils/prisma.js';
+import type { Prisma } from '@prisma/client';
+import { DomainError } from '../core/utils/errors.js';
 import type { CreateClassDto, CreateSubjectDto, CreateAssignmentDto, CreateExamDto, CreateQuestionDto, CreateGradeDto, CreateAttendanceDto, CreateBulletinDto, UpdateBulletinDto, CreateScheduleDto, PromotionDto } from '../types/index.js';
 import { calendarService } from './calendar.service.js';
 
@@ -35,9 +37,11 @@ export class AcademicService {
   async assignHomeroomTeacher(classId: string, teacherId: string) {
     // Find the class being assigned
     const targetClass = await prisma.class.findUnique({ where: { id: classId }, include: { homeroomTeacher: { include: { user: true } } } });
-
+    if (!targetClass) {
+      throw new DomainError('Class not found', 404);
+    }
     // Revert previous homeroom teacher's role if they have no other homeroom classes
-    if (targetClass?.homeroomTeacherId && targetClass.homeroomTeacherId !== teacherId) {
+    if (targetClass.homeroomTeacher && targetClass.homeroomTeacherId && targetClass.homeroomTeacherId !== teacherId) {
       const otherClasses = await prisma.class.count({ where: { homeroomTeacherId: targetClass.homeroomTeacherId, id: { not: classId } } });
       if (otherClasses === 0) {
         await prisma.user.update({
@@ -176,13 +180,17 @@ export class AcademicService {
     });
   }
 
-  async createExam(data: CreateExamDto) {
+  async createExam(data: CreateExamDto, createdById?: string) {
     const { date, duration, studentIds, ...rest } = data;
+    if (!createdById) {
+      throw new Error('User not authenticated');
+    }
     const exam = await prisma.exam.create({
       data: {
         ...rest,
         dueDate: date ? new Date(date) : undefined,
         timeLimit: duration || 60,
+        createdById,
       },
     });
 
@@ -256,8 +264,8 @@ export class AcademicService {
     }
     return prisma.attendance.upsert({
       where: { studentId_date: { studentId: data.studentId, date: data.date } },
-      create: data,
-      update: data,
+      create: { ...data } as Prisma.AttendanceUncheckedCreateInput,
+      update: { ...data } as Prisma.AttendanceUncheckedUpdateInput,
     });
   }
 

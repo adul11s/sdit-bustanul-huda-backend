@@ -16,7 +16,7 @@ export type BulletinStatus = 'UPCOMING' | 'ONGOING' | 'PAST';
 
 export type BulletinCategory = 'EVENT' | 'ACHIEVEMENT' | 'ANNOUNCEMENT';
 
-export type NotificationType = 'ASSIGNMENT' | 'EXAM' | 'PAYMENT' | 'BULLETIN' | 'PROMOTION' | 'GENERAL';
+export type NotificationType = 'ASSIGNMENT' | 'EXAM' | 'PAYMENT' | 'BULLETIN' | 'PROMOTION' | 'GENERAL' | 'GRADE';
 
 export interface User {
   id: string;

@@ -29,7 +29,7 @@ function removeSensitive(data: any): any {
   return result;
 }
 
-export type AuditAction = 'CREATE' | 'UPDATE' | 'DELETE' | 'SOFT_DELETE' | 'RESTORE' | 'LOGIN' | 'LOGOUT' | 'PASSWORD_CHANGE' | 'STATUS_CHANGE';
+export type AuditAction = 'CREATE' | 'UPDATE' | 'DELETE' | 'SOFT_DELETE' | 'RESTORE' | 'LOGIN' | 'LOGOUT' | 'PASSWORD_CHANGE' | 'STATUS_CHANGE' | 'ERROR';
 
 /**
  * Enhanced audit logger that captures oldData/newData snapshots.
@@ -49,7 +49,7 @@ export function auditLog(
   return async (req: Request, res: Response, next: NextFunction) => {
     const originalJson = res.json.bind(res);
 
-    res.json = async function (body: any) {
+    res.json = function (body: any) {
       res.json = originalJson;
 
       // Only log on success

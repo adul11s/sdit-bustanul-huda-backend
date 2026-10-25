@@ -12,19 +12,17 @@ import {
   submitExamSchema
 } from '../dtos/exam.dto.js';
 import { successResponse, errorResponse } from '../../../core/utils/response.js';
+import type { TokenPayload } from '../../../utils/auth.js';
 
 interface AuthenticatedRequest extends Request {
-  user?: {
-    userId: string;
-    email: string;
-    role: string;
-  };
+  user?: TokenPayload;
+  file?: Express.Multer.File;
 }
 
 export class ExamController {
   async createExam(req: AuthenticatedRequest, res: Response) {
     try {
-      const teacherId = req.user?.id;
+      const teacherId = req.user?.userId;
       if (!teacherId) {
         return errorResponse(res, 401, 'Unauthorized');
       }
@@ -34,7 +32,7 @@ export class ExamController {
       return successResponse(res, exam, 'Exam created successfully');
     } catch (error: any) {
       if (error.name === 'ZodError') {
-        return errorResponse(res, 400, 'Validation Error', error.errors[0].message);
+        return errorResponse(res, 400, 'Validation Error', error.issues[0].message);
       }
       return errorResponse(res, 500, 'Internal Server Error', error.message || 'Failed to create exam');
     }
@@ -56,7 +54,7 @@ export class ExamController {
 
   async getExams(req: AuthenticatedRequest, res: Response) {
     try {
-      const teacherId = req.user?.id;
+      const teacherId = req.user?.userId;
       if (!teacherId) {
         return errorResponse(res, 401, 'Unauthorized');
       }
@@ -79,7 +77,7 @@ export class ExamController {
 
   async updateExam(req: AuthenticatedRequest, res: Response) {
     try {
-      const teacherId = req.user?.id;
+      const teacherId = req.user?.userId;
       if (!teacherId) {
         return errorResponse(res, 401, 'Unauthorized');
       }
@@ -90,7 +88,7 @@ export class ExamController {
       return successResponse(res, exam);
     } catch (error: any) {
       if (error.name === 'ZodError') {
-        return errorResponse(res, 400, error.errors[0].message);
+        return errorResponse(res, 400, error.issues[0].message);
       }
       return errorResponse(res, 500, error.message);
     }
@@ -98,7 +96,7 @@ export class ExamController {
 
   async publishExam(req: AuthenticatedRequest, res: Response) {
     try {
-      const teacherId = req.user?.id;
+      const teacherId = req.user?.userId;
       if (!teacherId) {
         return errorResponse(res, 401, 'Unauthorized');
       }
@@ -113,7 +111,7 @@ export class ExamController {
 
   async deleteExam(req: AuthenticatedRequest, res: Response) {
     try {
-      const teacherId = req.user?.id;
+      const teacherId = req.user?.userId;
       if (!teacherId) {
         return errorResponse(res, 401, 'Unauthorized');
       }
@@ -133,7 +131,7 @@ export class ExamController {
       return successResponse(res, question, 'Question created successfully');
     } catch (error: any) {
       if (error.name === 'ZodError') {
-        return errorResponse(res, 400, error.errors[0].message);
+        return errorResponse(res, 400, error.issues[0].message);
       }
       return errorResponse(res, 500, error.message);
     }
@@ -147,7 +145,7 @@ export class ExamController {
       return successResponse(res, question);
     } catch (error: any) {
       if (error.name === 'ZodError') {
-        return errorResponse(res, 400, error.errors[0].message);
+        return errorResponse(res, 400, error.issues[0].message);
       }
       return errorResponse(res, 500, error.message);
     }
@@ -217,7 +215,7 @@ export class ExamController {
 
   async gradeEssayAnswer(req: AuthenticatedRequest, res: Response) {
     try {
-      const teacherId = req.user?.id;
+      const teacherId = req.user?.userId;
       if (!teacherId) {
         return errorResponse(res, 401, 'Unauthorized');
       }
@@ -230,7 +228,7 @@ export class ExamController {
       return successResponse(res, { answer, finalPercentage: percentage });
     } catch (error: any) {
       if (error.name === 'ZodError') {
-        return errorResponse(res, 400, error.errors[0].message);
+        return errorResponse(res, 400, error.issues[0].message);
       }
       return errorResponse(res, 500, error.message);
     }
@@ -238,7 +236,7 @@ export class ExamController {
 
   async getPendingEssays(req: AuthenticatedRequest, res: Response) {
     try {
-      const teacherId = req.user?.id;
+      const teacherId = req.user?.userId;
       if (!teacherId) {
         return errorResponse(res, 401, 'Unauthorized');
       }
@@ -297,7 +295,7 @@ export class ExamController {
       return successResponse(res, answer);
     } catch (error: any) {
       if (error.name === 'ZodError') {
-        return errorResponse(res, 400, error.errors[0].message);
+        return errorResponse(res, 400, error.issues[0].message);
       }
       return errorResponse(res, 500, error.message);
     }

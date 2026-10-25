@@ -1,4 +1,5 @@
 import { PrismaClient, Exam, Question, StudentAnswer, Submission, Prisma } from '@prisma/client';
+import { DomainError } from '../../../core/utils/errors.js';
 import { IExamWithRelations, IQuestion, ICreateExamDTO, IUpdateExamDTO, ICreateQuestionDTO, IUpdateQuestionDTO, IExamFilters, ISubmissionFilters, IStudentAnswerWithRelations, ISubmissionWithRelations, IPaginatedResponse, ICreateQuestionsBatchDTO, IGradeAnswerDTO } from '../interfaces/exam.types.js';
 
 const prisma = new PrismaClient();
@@ -113,7 +114,7 @@ export class ExamRepository {
     if (data.title !== undefined) updateData.title = data.title;
     if (data.description !== undefined) updateData.description = data.description;
     if (data.type !== undefined) updateData.type = data.type;
-    if (data.subjectId !== undefined) updateData.subjectId = data.subjectId;
+    if (data.subjectId !== undefined) updateData.subject = { connect: { id: data.subjectId } };
     if (data.dueDate !== undefined) updateData.dueDate = data.dueDate ? new Date(data.dueDate) : null;
     if (data.startTime !== undefined) updateData.startTime = data.startTime ? new Date(data.startTime) : null;
     if (data.timeLimit !== undefined) updateData.timeLimit = data.timeLimit;
@@ -169,7 +170,9 @@ export class ExamRepository {
         examId: data.examId,
         text: data.text,
         type: data.type,
-        options: data.options as Prisma.JsonObject || null,
+        options: data.options === undefined || data.options === null
+          ? Prisma.DbNull
+          : (data.options as Prisma.InputJsonValue),
         correctAnswer: data.correctAnswer,
         score: data.score,
         order: data.order ?? (maxOrder?.order ?? 0) + 1,
@@ -181,8 +184,13 @@ export class ExamRepository {
   async createQuestionsBatch(data: ICreateQuestionsBatchDTO): Promise<Question[]> {
     const questions: Question[] = [];
 
+    const examId = data.examId;
+    if (!examId) {
+      throw new DomainError('examId is required to create questions in batch', 400);
+    }
+
     for (const q of data.questions) {
-      const question = await this.createQuestion({ ...q, examId: data.examId });
+      const question = await this.createQuestion({ ...q, examId });
       questions.push(question);
     }
 
@@ -194,7 +202,7 @@ export class ExamRepository {
 
     if (data.text !== undefined) updateData.text = data.text;
     if (data.type !== undefined) updateData.type = data.type;
-    if (data.options !== undefined) updateData.options = data.options as Prisma.JsonObject;
+    if (data.options !== undefined) updateData.options = data.options as unknown as Prisma.InputJsonValue;
     if (data.correctAnswer !== undefined) updateData.correctAnswer = data.correctAnswer;
     if (data.score !== undefined) updateData.score = data.score;
     if (data.order !== undefined) updateData.order = data.order;
@@ -275,7 +283,7 @@ export class ExamRepository {
     };
   }
 
-  async createSubmission(examId: string, userId: string, ipAddress?: string, userAgent?: string): Promise<Submission> {
+  async createSubmission(examId: string, userId: string, ipAddress?: string, userAgent?: string): Promise<ISubmissionWithRelations> {
     // Find student by userId
     let student = await prisma.student.findFirst({
       where: { userId }
