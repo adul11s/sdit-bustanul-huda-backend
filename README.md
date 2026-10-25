@@ -1,5 +1,7 @@
 # SDIT Bustanul Huda - Backend
 
+[![CI](https://github.com/adul11s/sdit-bustanul-huda-backend/actions/workflows/ci.yml/badge.svg)](https://github.com/adul11s/sdit-bustanul-huda-backend/actions/workflows/ci.yml)
+
 Backend API for SDIT Bustanul Huda school management system.
 
 ## Tech Stack

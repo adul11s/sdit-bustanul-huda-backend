@@ -30,4 +30,4 @@ The API serves five distinct roles (Prisma `Role` enum: `ADMIN`, `TEACHER`, `HOM
 ## Verification
 
 - `npm test` → 28/28 (auth + authorization cases included).
-- CI green with `JWT_SECRET` set: run #40169097288.
+- CI green with `JWT_SECRET` set: run [40169398935](https://github.com/adul11s/sdit-bustanul-huda-backend/actions/runs/40169398935).

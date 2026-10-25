@@ -30,4 +30,4 @@ The school data is highly relational (students ↞ guardians ↞ payments, teach
 ## Verification
 
 - Local: `npm test` → 28/28 against the local Postgres/seed.
-- CI: `.github/workflows/ci.yml` — `prisma migrate deploy` + seed on `postgres:16`, then typecheck + vitest; run #40169097288 green.
+- CI: `.github/workflows/ci.yml` — `prisma migrate deploy` + seed on `postgres:16`, then typecheck + vitest; run [40169398935](https://github.com/adul11s/sdit-bustanul-huda-backend/actions/runs/40169398935) green.

@@ -1,7 +1,7 @@
 # Quality Scorecard — sdit-bustanul-huda-backend
 
 **Tanggal review:** 2026-10-25
-**Bukti utama:** CI run [40169097288](https://github.com/adul11s/sdit-bustanul-huda-backend/actions/runs/40169097288), commit `4d136db`.
+**Bukti utama:** CI run [40169398935](https://github.com/adul11s/sdit-bustanul-huda-backend/actions/runs/40169398935) (hijau, 28/28 test), commit `4d136db`.
 
 | Dimensi | Bobot | Skor | Bukti |
 |---|---|---|---|
