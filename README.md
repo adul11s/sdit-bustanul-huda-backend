@@ -55,3 +55,17 @@ npm start
 ## Database
 
 Uses PostgreSQL with Prisma ORM. Database schema is in `prisma/schema.prisma`.
+
+## Deployment & Demo
+
+**Status jujur: belum dideploy.** Percobaan deploy ke Vercel (`vercel deploy --prod`, deployment
+`dpl_3a4BmemoUU1Cmx3oEg8eqEuf2eLp`) gagal pada build — Express/TS ini belum dipasang untuk
+lingkungan serverless Vercel. Lebih penting lagi: aplikasi ini butuh database Postgres tersedia
+publik (mis. Neon) yang belum disiapkan; kami tidak mau menaruh kredensial asli di kode atau
+mengklaim URL yang tidak bisa dibuka reviewer.
+
+**TODO: deploy menunggu hosting — CI bukti test.**
+
+Bukti kualitas saat ini:
+- [![CI](https://github.com/adul11s/sdit-bustanul-huda-backend/actions/workflows/ci.yml/badge.svg)](https://github.com/adul11s/sdit-bustanul-huda-backend/actions/workflows/ci.yml) CI hijau: `prisma migrate deploy` + seed di Postgres 16 → strict `tsc` (0 error, 2 config) → 28/28 test API (vitest + supertest) — [run 40169398935](https://github.com/adul11s/sdit-bustanul-huda-backend/actions/runs/40169398935).
+- Skor dan kekurangan terdokumentasi di [`docs/quality-scorecard-backend.md`](docs/quality-scorecard-backend.md) dan [docs/adr/](docs/adr/).
